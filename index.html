@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanabata Wish Tree (Tanzaku Board)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bamboo-green: #2d6a4f;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --text-dark: #1b263b;
+        }
+
+        body {
+            font-family: 'Mali', cursive;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            
+            /* CUSTOM BACKGROUND IMAGE CONFIGURATION */
+            background-image: url('background.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #0d1b2a; /* Fallback deep night color */
+        }
+
+        /* FLOATING INPUT SIDEBAR */
+        .sidebar {
+            width: 300px;
+            height: 95vh;
+            background: var(--sidebar-bg);
+            border: 4px solid #52b788;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 20px;
+            margin-left: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            box-sizing: border-box;
+            overflow-y: auto;
+            user-select: auto; /* Allow text input selection mechanics to work nicely */
+        }
+
+        h1 {
+            color: var(--bamboo-green);
+            margin: 0 0 2px 0;
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #415a77;
+            margin-bottom: 12px;
+            cursor: default;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid #52b788;
+            font-family: 'Mali', cursive;
+            font-size: 0.95rem;
+            outline: none;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--bamboo-green);
+            box-shadow: 0 0 5px rgba(45, 106, 79, 0.3);
+        }
+
+        /* PREVIEW CONTAINER SECTION */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(82, 183, 136, 0.1);
+            border-radius: 16px;
+            border: 2px dashed #52b788;
+            box-sizing: border-box;
+        }
+
+        .preview-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--bamboo-green);
+            margin-bottom: 5px;
+        }
+
+        /* LIVE PREVIEW WRAPPER TO POSITION IN BOX WITHOUT POPPING SIDEBAR OUT */
+        .preview-scale {
+            width: 75px;
+            height: 210px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            padding: 12px;
+            background: var(--bamboo-green);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+            margin-top: 5px;
+            box-shadow: 0 4px 10px rgba(45, 106, 79, 0.3);
+        }
+
+        button:hover {
+            background: #1b4332;
+        }
+
+        /* MAIN TREE BOARD AREA */
+        .tree-area {
+            flex-grow: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #drop-zone {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            pointer-events: none;
+            position: relative;
+        }
+
+        /* TRADITIONAL TANZAKU (WISH STRIPS) */
+        .tanzaku {
+            width: 75px;
+            height: 210px;
+            position: absolute;
+            cursor: grab;
+            z-index: 100;
+            border-radius: 4px;
+            box-shadow: 3px 5px 12px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 8px;
+            box-sizing: border-box;
+            text-align: center;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .tanzaku:active {
+            cursor: grabbing;
+        }
+
+        /* String hole loop at top of strip */
+        .tanzaku::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #0d1b2a;
+            border-radius: 50%;
+            position: absolute;
+            top: 8px;
+            left: calc(50% - 4px);
+        }
+
+        /* High contrast styles for student readability */
+        .tanzaku-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+            word-break: break-word;
+            margin-top: 8px;
+            border-bottom: 1px dashed rgba(255,255,255,0.4);
+            width: 100%;
+            padding-bottom: 4px;
+        }
+
+        .tanzaku-wish {
+            font-size: 0.9rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+            font-weight: 600;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            height: 75%;
+            margin: 5px 0;
+            line-height: 1.2;
+            word-break: break-all;
+            white-space: normal;
+        }
+
+        /* Vivid Festival Strip Colors */
+        .color-pink { background: linear-gradient(180deg, #ff477e, #ff7096); }
+        .color-blue { background: linear-gradient(180deg, #0077b6, #00b4d8); }
+        .color-green { background: linear-gradient(180deg, #9ef01a, #70e000); }
+        .color-yellow { background: linear-gradient(180deg, #FFEA00, #fff275); }
+        .color-purple { background: linear-gradient(180deg, #7209b7, #b5179e); }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h1>Tanabata Wishes</h1>
+        <div class="subtitle" ondblclick="clearBoard()">Hang your Tanzaku! 🎋</div>
+
+        <div class="input-group">
+            <label for="student-name">1. Your Name:</label>
+            <input type="text" id="student-name" placeholder="e.g., Ken" maxlength="12" oninput="updateLivePreview()">
+
+            <label for="student-wish">2. Type Your Wish:</label>
+            <input type="text" id="student-wish" placeholder="I want a dog 🐶" maxlength="30" oninput="updateLivePreview()">
+
+            <label for="strip-color">3. Strip Color:</label>
+            <select id="strip-color" onchange="updateLivePreview()">
+                <option value="pink">Pink 🌸</option>
+                <option value="blue">Blue 💎</option>
+                <option value="green">Green 🌱</option>
+                <option value="yellow">Yellow ⭐</option>
+                <option value="purple">Purple 🔮</option>
+            </select>
+
+            <div class="preview-container">
+                <div class="preview-title">👁️ Live Preview:</div>
+                <div class="preview-scale">
+                    <div id="live-preview-strip" class="tanzaku color-pink" style="position: relative; left: 0; top: 0; margin: 0; box-shadow: 1px 3px 8px rgba(0,0,0,0.3);">
+                        <div class="tanzaku-name" id="preview-name">Ken</div>
+                        <div class="tanzaku-wish" id="preview-wish">I want a dog 🐶</div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="createTanzakuFromUI()">Hang Wish! 🎋</button>
+        </div>
+    </div>
+
+    <div class="tree-area" id="tree-container">
+        <div id="drop-zone"></div>
+    </div>
+
+    <script>
+        const treeContainer = document.getElementById('tree-container');
+        let wishes = JSON.parse(localStorage.getItem('tanabata_wishes')) || {};
+
+        // Track dragging items
+        let activeItem = null;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        window.onload = function() {
+            Object.keys(wishes).forEach(id => {
+                renderTanzaku(id, wishes[id]);
+            });
+            updateLivePreview(); // Initialize default preview values
+        };
+
+        // Fixed Live Updating Preview Logic
+        function updateLivePreview() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            const wishInput = document.getElementById('student-wish').value.trim();
+            const colorSelect = document.getElementById('strip-color').value;
+
+            const previewStrip = document.getElementById('live-preview-strip');
+            const previewName = document.getElementById('preview-name');
+            const previewWish = document.getElementById('preview-wish');
+
+            // Feed string or fall back smoothly
+            previewName.textContent = nameInput || "Ken";
+            previewWish.textContent = wishInput || "I want a dog 🐶";
+
+            // Clean colors and override classes cleanly
+            previewStrip.className = 'tanzaku';
+            previewStrip.classList.add(`color-${colorSelect}`);
+        }
+
+        function createTanzakuFromUI() {
+            const nameInput = document.getElementById('student-name');
+            const wishInput = document.getElementById('student-wish');
+            const colorSelect = document.getElementById('strip-color');
+
+            const name = nameInput.value.trim() || "Anonymous";
+            const wish = wishInput.value.trim() || "I want to be happy! ✨";
+            const color = colorSelect.value;
+
+            // Student Safety Check confirmation popup
+            const confirmationText = `Are you ready to hang your wish on the branch?\n\n📝 Name: ${name}\n🎋 Wish: ${wish}`;
+            if (!confirm(confirmationText)) {
+                return; // Drops creation if they clicked cancel
+            }
+
+            // Calculations to spawn directly outside the control bar container
+            const initialX = 360 + Math.random() * 80;
+            const initialY = 150 + Math.random() * 120;
+            const rotation = (Math.random() * 16) - 8; 
+
+            const wishData = {
+                name: name,
+                wish: wish,
+                color: color,
+                x: initialX,
+                y: initialY,
+                rotation: rotation
+            };
+
+            /* LOCAL ENGINE SAVE */
+            const uniqueId = 'wish_' + Date.now();
+            wishes[uniqueId] = wishData;
+            localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
+            renderTanzaku(uniqueId, wishData);
+
+            /* CLOUD FIREBASE UPGRADE LINK (Uncomment to swap) */
+            // push(wishesRef, wishData);
+
+            // Reset components after submission
+            nameInput.value = "";
+            wishInput.value = "";
+            updateLivePreview();
+        }
+
+        function renderTanzaku(id, data) {
+            const el = document.createElement('div');
+            el.classList.add('tanzaku', `color-${data.color}`);
+            el.id = id;
+            el.style.left = data.x + 'px';
+            el.style.top = data.y + 'px';
+            el.style.transform = `rotate(${data.rotation}deg)`;
+
+            el.innerHTML = `
+                <div class="tanzaku-name">${data.name}</div>
+                <div class="tanzaku-wish">${data.wish}</div>
+            `;
+
+            // Touch interaction tracking filters
+            el.addEventListener('mousedown', startDrag);
+            el.addEventListener('touchstart', startDrag, { passive: false });
+
+            treeContainer.appendChild(el);
+        }
+
+        function startDrag(e) {
+            activeItem = e.currentTarget;
+            activeItem.style.zIndex = 1000;
+            
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            const rect = activeItem.getBoundingClientRect();
+            offsetX = clientX - rect.left;
+            offsetY = clientY - rect.top;
+
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+            
+            if(e.cancelable) e.preventDefault();
+        }
+
+        function dragMove(e) {
+            if (!activeItem) return;
+
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            let x = clientX - offsetX;
+            let y = clientY - offsetY;
+
+            x = Math.max(0, Math.min(x, window.innerWidth - 80));
+            y = Math.max(0, Math.min(y, window.innerHeight - 220));
+
+            activeItem.style.left = x + 'px';
+            activeItem.style.top = y + 'px';
+
+            if(e.cancelable) e.preventDefault();
+        }
+
+        function endDrag(e) {
+            if (!activeItem) return;
+
+            const id = activeItem.id;
+            const currentX = parseInt(activeItem.style.left);
+            const currentY = parseInt(activeItem.style.top);
+
+            /* LOCAL PERSISTENCE ENGINE */
+            if (wishes[id]) {
+                wishes[id].x = currentX;
+                wishes[id].y = currentY;
+                localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
+            }
+
+            /* FIREBASE RE-SYNC IF UNCOMMENTED */
+            // const itemDbRef = ref(db, `wishes/${id}`);
+            // update(itemDbRef, { x: currentX, y: currentY });
+
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('touchmove', dragMove);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+
+            activeItem = null;
+        }
+
+        // Secret double-click header utility reset
+        function clearBoard() {
+            if(confirm("Do you want to clear all wishes from the tree?")) {
+                wishes = {};
+                localStorage.removeItem('tanabata_wishes');
+                document.querySelectorAll('.tree-area .tanzaku').forEach(el => el.remove());
+
+                /* FIREBASE CLEAR LINK (Uncomment to use) */
+                // remove(wishesRef);
+            }
+        }
+    </script>
+</body>
+</html>
