@@ -341,9 +341,6 @@
             localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
             renderTanzaku(uniqueId, wishData);
 
-            /* CLOUD FIREBASE UPGRADE LINK (Uncomment to swap) */
-            // push(wishesRef, wishData);
-
             // Reset components after submission
             nameInput.value = "";
             wishInput.value = "";
@@ -370,6 +367,7 @@
             treeContainer.appendChild(el);
         }
 
+        /* --- FIXED DRAGGING CORE REPLACEMENTS --- */
         function startDrag(e) {
             activeItem = e.currentTarget;
             activeItem.style.zIndex = 1000;
@@ -377,9 +375,9 @@
             const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
             const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
 
-            const rect = activeItem.getBoundingClientRect();
-            offsetX = clientX - rect.left;
-            offsetY = clientY - rect.top;
+            // FIX: Using offsetLeft and offsetTop avoids layout matrix errors 
+            offsetX = clientX - activeItem.offsetLeft;
+            offsetY = clientY - activeItem.offsetTop;
 
             document.addEventListener('mousemove', dragMove);
             document.addEventListener('touchmove', dragMove, { passive: false });
@@ -398,6 +396,7 @@
             let x = clientX - offsetX;
             let y = clientY - offsetY;
 
+            // Restrict elements to browser boundaries
             x = Math.max(0, Math.min(x, window.innerWidth - 80));
             y = Math.max(0, Math.min(y, window.innerHeight - 220));
 
@@ -421,10 +420,6 @@
                 localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
             }
 
-            /* FIREBASE RE-SYNC IF UNCOMMENTED */
-            // const itemDbRef = ref(db, `wishes/${id}`);
-            // update(itemDbRef, { x: currentX, y: currentY });
-
             document.removeEventListener('mousemove', dragMove);
             document.removeEventListener('touchmove', dragMove);
             document.removeEventListener('mouseup', endDrag);
@@ -439,9 +434,6 @@
                 wishes = {};
                 localStorage.removeItem('tanabata_wishes');
                 document.querySelectorAll('.tree-area .tanzaku').forEach(el => el.remove());
-
-                /* FIREBASE CLEAR LINK (Uncomment to use) */
-                // remove(wishesRef);
             }
         }
     </script>
