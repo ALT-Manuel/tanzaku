@@ -271,22 +271,50 @@
         <div id="drop-zone"></div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script
+
     <script>
+        // Your real-time database connection setup
+        const firebaseConfig = {  
+            apiKey: "AIzaSyA3mCVqHjHyNWrdS3ippvr0oweckpHmCj8",  
+            authDomain: "tanzaku-3b3a3.firebaseapp.com",  
+            databaseURL: "https://tanzaku-3b3a3-default-rtdb.asia-southeast1.firebasedatabase.app",  
+            projectId: "tanzaku-3b3a3",  
+            storageBucket: "tanzaku-3b3a3.firebasestorage.app",  
+            messagingSenderId: "53380109656",  
+            appId: "1:53380109656:web:ea5baf983b8bfc02e7412d" 
+        };
+
+        // Initialize Firebase instances
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const wishesRef = database.ref('wishes');
+
         const treeContainer = document.getElementById('tree-container');
-        let wishes = JSON.parse(localStorage.getItem('tanabata_wishes')) || {};
 
         // Track dragging items
         let activeItem = null;
         let offsetX = 0;
         let offsetY = 0;
 
+        // MULTIPLAYER SYNC ENGINE: Listen for cloud data changes dynamically
+        wishesRef.on('value', (snapshot) => {
+            // Clear existing items in tree workspace to re-render fresh snapshots safely
+            document.querySelectorAll('.tree-area .tanzaku').forEach(el => el.remove());
+            
+            const databaseData = snapshot.val();
+            if (databaseData) {
+                Object.keys(databaseData).forEach(id => {
+                    renderTanzaku(id, databaseData[id]);
+                });
+            }
+        });
+
         window.onload = function() {
-            Object.keys(wishes).forEach(id => {
-                renderTanzaku(id, wishes[id]);
-            });
             updateLivePreview(); // Initialize default preview values
         };
-
+        
         // Fixed Live Updating Preview Logic
         function updateLivePreview() {
             const nameInput = document.getElementById('student-name').value.trim();
@@ -335,11 +363,8 @@
                 rotation: rotation
             };
 
-            /* LOCAL ENGINE SAVE */
-            const uniqueId = 'wish_' + Date.now();
-            wishes[uniqueId] = wishData;
-            localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
-            renderTanzaku(uniqueId, wishData);
+            /* PUSH TO CLOUD ENGINE */
+            wishesRef.push(wishData);
 
             // Reset components after submission
             nameInput.value = "";
@@ -413,12 +438,11 @@
             const currentX = parseInt(activeItem.style.left);
             const currentY = parseInt(activeItem.style.top);
 
-            /* LOCAL PERSISTENCE ENGINE */
-            if (wishes[id]) {
-                wishes[id].x = currentX;
-                wishes[id].y = currentY;
-                localStorage.setItem('tanabata_wishes', JSON.stringify(wishes));
-            }
+            /* PERSISTENCE BACKEND SYNC UP UPDATE */
+            wishesRef.child(id).update({
+                x: currentX,
+                y: currentY
+            });
 
             document.removeEventListener('mousemove', dragMove);
             document.removeEventListener('touchmove', dragMove);
@@ -427,13 +451,11 @@
 
             activeItem = null;
         }
-
+        
         // Secret double-click header utility reset
         function clearBoard() {
             if(confirm("Do you want to clear all wishes from the tree?")) {
-                wishes = {};
-                localStorage.removeItem('tanabata_wishes');
-                document.querySelectorAll('.tree-area .tanzaku').forEach(el => el.remove());
+                wishesRef.remove();
             }
         }
     </script>
